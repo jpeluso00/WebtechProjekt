@@ -1,4 +1,3 @@
-from wsgiref import validate
 from flask import Flask, render_template, request, redirect, url_for
 from flask_bootstrap import Bootstrap
 from flask_wtf import FlaskForm
@@ -13,26 +12,16 @@ from werkzeug.utils import secure_filename
 import os
 from datetime import datetime
 import time
-#from flask_uploads import UploadSet, IMAGES
-#UPLOAD_FOLDER = "C:\\User\\jpelu\\Desktop\\Fotoalbum\\templates\\UserFoto"
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '123'
-### SQLALCHEMY
-#Jack Desktop
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(basedir, "Userdatabase.sqlite")
-#app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
-#Jack REWE Laptop
-#app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///C:/Users/a183573/Desktop/Fotoalbum/Daten/database.db"
-#app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///C:/Users/Aaron/Desktop/Fotoalbum/Fotoalbum/Daten/database.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 Bootstrap(app)
 db = SQLAlchemy(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
-
-
 class User(UserMixin, db.Model):
     __tablename__ = "user"
     id = db.Column(db.Integer, primary_key=True)
@@ -59,10 +48,6 @@ class Fotoinalbum(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key = True)
     alben_id =  db.Column(db.Integer, db.ForeignKey("alben.id"))
     upload_id = db.Column(db.Integer, db.ForeignKey("upload.id"))
-class Shared(UserMixin,db.Model):
-    id = db.Column(db.Integer, primary_key = True)
-    alben_id =  db.Column(db.Integer, db.ForeignKey("alben.id"))
-    user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
 class Comments(UserMixin,db.Model):
     id = db.Column(db.Integer, primary_key = True)
     text = db.Column(db.String(120))
@@ -168,10 +153,98 @@ def hochladen():
                 updated = bildis[-1]
         return render_template("success.html", updated = updated, form = form, i = len(bildis))
     return render_template("upload.html", form=form)
-@app.route("/konto")
+    
+@app.route("/konto", methods=["POST","GET"])
 @login_required
 def konto():
-    return render_template("konto.html")
+    originlist = list()
+    kl=0
+    originlistt = list()
+    originlistc = list()
+    originlistpf = list()
+    originlistu = list()
+    originslist = list()
+    originsowner = list()
+    ksl=0
+    hsjk = 0
+    originslistt = list()
+    originslistc = list()
+    originslistpf = list()
+    originslistu = list()
+    timepfad = list()
+    timealben = list()
+    timetitel = list()
+    timecaption = list()
+    lengthof= list()
+    timespfad = list()
+    timesalben = list()
+    timestitel = list()
+    timescaption = list()
+    lengthof= list()
+    stmt = db.select(Alben).where(Alben.user_id == current_user.id).order_by(Alben.id)
+    for row in db.session.execute(stmt):
+        originlist.append(row.Alben.id)
+        originlistt.append(row.Alben.name)
+        originlistc.append(row.Alben.description)
+    for o in range(0,len(originlist)):
+        stmt = db.select(Fotoinalbum).where(Fotoinalbum.alben_id == originlist[o]).order_by(Fotoinalbum.id)
+        for row in db.session.execute(stmt):
+            stmt = db.select(Upload).where(Upload.id == row.Fotoinalbum.upload_id).order_by(Upload.id)
+            for row in db.session.execute(stmt):
+                originlistpf.append(row.Upload.pfad)
+    if len(originlist) >= 5:
+        for k in range(len(originlist)-5, len(originlist)):
+            timealben.append(originlist[k])
+            timetitel.append(originlistt[k])
+            timecaption.append(originlistc[k])
+            timepfad.append(originlistpf[k])
+        hjk = len(timepfad)
+    else: 
+        for k in range(0, len(originlist)):
+            timealben.append(originlist[k])
+            timetitel.append(originlistt[k])
+            timecaption.append(originlistc[k])
+            timepfad.append(originlistpf[k])
+        hjk = len(timepfad)
+        if hjk <= 4:
+            kl = 1
+    ###
+    stmt = db.select(Sharedalbum).where(Sharedalbum.user_id == current_user.id).order_by(Sharedalbum.id)
+    for row in db.session.execute(stmt):
+        lengthof.append(row.Sharedalbum.alben_id)
+        for y in range(0,len(lengthof)):
+            stmt = db.select(Alben).where(Alben.id == lengthof[y]).order_by(Alben.id)
+            for row in db.session.execute(stmt):
+                originslist.append(row.Alben.id)
+                originslistt.append(row.Alben.name)
+                originslistc.append(row.Alben.description)
+                originslistu.append(row.Alben.user_id)
+    for o in range(0,len(originslist)):
+        stmt = db.select(Fotoinalbum).where(Fotoinalbum.alben_id == originslist[o]).order_by(Fotoinalbum.id)
+        for row in db.session.execute(stmt):
+            stmt = db.select(Upload).where(Upload.id == row.Fotoinalbum.upload_id).order_by(Upload.id)
+            for row in db.session.execute(stmt):
+                originslistpf.append(row.Upload.pfad)
+        smt = db.select(User).where(User.id == originslistu[o]).order_by(User.id)
+        for pow in db.session.execute(smt):
+            originsowner.append(pow.User.username)
+    if len(originslist) >= 5:
+        for k in range(len(originslist)-5, len(originslist)):
+            timesalben.append(originslist[k])
+            timestitel.append(originslistt[k])
+            timescaption.append(originslistc[k])
+            timespfad.append(originslistpf[k])
+        hsjk = len(timespfad)
+    else: 
+        for k in range(0, len(originslist)):
+            timesalben.append(originslist[k])
+            timestitel.append(originslistt[k])
+            timescaption.append(originslistc[k])
+            timespfad.append(originslistpf[k])
+        hsjk = len(timespfad)
+        if hsjk <= 4:
+            ksl = 1
+    return render_template("konto.html",timepfad=timepfad, timealben=timealben, timetitel=timetitel,originsowner = originsowner, timecaption = timecaption, hjk=hjk, kl=kl, timespfad=timespfad, timesalben=timesalben, timestitel=timestitel, timescaption = timescaption, hsjk=hsjk, ksl=ksl  )
 @app.route("/logout")
 @login_required
 def logout():
@@ -241,12 +314,23 @@ def alben():
 def album(seite):
     form = KommentarForm()
     berechtigt = 0
+    berechtigt1 = 0
+    usern=list()
     stmt = db.select(Alben).where(Alben.id == seite).order_by()
     for row in db.session.execute(stmt):
         berechtigt = row.Alben.user_id
         titel = row.Alben.name
         caption = row.Alben.description
-    if current_user.id == berechtigt:
+    stmt = db.select(Sharedalbum).where(Sharedalbum.user_id == current_user.id).order_by()
+    for row in db.session.execute(stmt):
+        usern.append(row.Sharedalbum.alben_id)
+        for g in range(0,len(usern)):
+            test =usern[g]
+            if  int(seite) == int(test):
+                berechtigt1 = current_user.id
+            else:
+                print("ne")
+    if current_user.id == berechtigt or current_user.id == berechtigt1 :
         m= 0
         bilderinalbum = list()
         pfade = list()
@@ -280,7 +364,7 @@ def album(seite):
         z = len(comment_text)
         form.kommentar.data = None
         return render_template("album.html", seite=seite,pfade = pfade, m = m,z=z, titel=titel, caption = caption, form=form, user_info = user_info, comment_text = comment_text, pubdate = pubdate )
-    elif current_user.id != berechtigt:
+    elif current_user.id != berechtigt and current_user.id != berechtigt1:
         return("Keine Berechtigungen für das Album!")
 @app.route("/sharealben", methods=["GET", "POST"])
 @login_required
@@ -387,6 +471,5 @@ def sharedalben():
         for low in db.session.execute(stmt):
             thumbnailpfad.append(low.Upload.pfad)
     return render_template("sharedalben.html", i=i, thumbnailpfad = thumbnailpfad, bildis=bildis, titel=titel, caption = caption, usernames = usernames)
-
 if __name__ == '__main__':
     app.run(debug=True)
